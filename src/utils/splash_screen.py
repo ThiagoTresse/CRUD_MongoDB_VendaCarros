@@ -1,13 +1,17 @@
 from utils import config
 
-class SplashScreen:
 
+class SplashScreen:
     def __init__(self):
         # Nome(s) do(s) criador(es)
-        self.created_by = "Howard Roatti"
+        self.created_by = (
+            "Luis Gulherme Oliveira",
+            "Macela da Silva",
+            "Thiago Campos Tresse",
+        )
         self.professor = "Prof. M.Sc. Howard Roatti"
         self.disciplina = "Banco de Dados"
-        self.semestre = "2022/2"
+        self.semestre = "2023/2"
 
     def get_documents_count(self, collection_name):
         # Retorna o total de registros computado pela query
@@ -20,11 +24,9 @@ class SplashScreen:
         #                   SISTEMA DE VENDAS                     
         #                                                         
         #  TOTAL DE REGISTROS:                                    
-        #      1 - PRODUTOS:         {str(self.get_documents_count(collection_name="produtos")).rjust(5)}
-        #      2 - CLIENTES:         {str(self.get_documents_count(collection_name="clientes")).rjust(5)}
-        #      3 - FORNECEDORES:     {str(self.get_documents_count(collection_name="fornecedores")).rjust(5)}
-        #      4 - PEDIDOS:          {str(self.get_documents_count(collection_name="pedidos")).rjust(5)}
-        #      5 - ITENS DE PEDIDOS: {str(self.get_documents_count(collection_name="itens_pedido")).rjust(5)}
+        #      1 - CLIENTES:         {str(self.get_documents_count(collection_name="clientes")).rjust(5)}
+        #      2 - VEICULOS:         {str(self.get_documents_count(collection_name="veiculos")).rjust(5)}
+        #      3 - VENDAS:           {str(self.get_documents_count(collection_name="vendas")).rjust(5)} #ou vendaVeiculos
         #
         #  CRIADO POR: {self.created_by}
         #
