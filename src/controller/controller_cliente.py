@@ -26,7 +26,7 @@ class Controller_Cliente:
             # Insere e persiste o novo cliente
             self.mongo.db["Cliente"].insert_one({"cpfcliente": cpfCliente, "idcliente": idCliente, "nome": nome, "email": email, "telefone": telefone, "endereco": endereco})
             # Recupera os dados do novo cliente criado transformando em um DataFrame
-            df_cliente = self.recupera_cliente ({"cpfcliente": cpfCliente, "idcliente": idCliente, "nome": nome, "email": email, "telefone": telefone, "endereco": endereco})
+            df_cliente = self.recupera_cliente(cpfCliente)
             # Cria um novo objeto Cliente
             novo_cliente = Cliente(df_cliente.cpfcliente.values[0], df_cliente.idcliente.values[0], df_cliente.nome.values[0], df_cliente.email.values[0],
                                     df_cliente.telefone.values[0], df_cliente.endereco.values[0])
@@ -41,38 +41,30 @@ class Controller_Cliente:
             return None
 
     def atualizar_cliente(self) -> Cliente:
-        # Cria uma nova conexão com o banco que permite alteração
-        oracle = OracleQueries(can_write=True)
-        oracle.connect()
-
         # Solicita ao usuário o código do cliente a ser alterado
         cpfCliente = int(input("Insira o CPF do cliente que deseja alterar o nome: "))
-        
+        self.mongo.connect()
         # Verifica se o cliente existe na base de dados
-        if not self.verifica_existencia_cliente(oracle, cpfCliente):
+        if not self.verifica_existencia_cliente(cpfCliente):
             # Solicita a nova descrição do cliente
             novo_nome = input("Nome (Novo): ")
-            # Atualiza o nome do cliente existente
-            oracle.write(f"update LABDATABASE.Cliente set nome = '{novo_nome}' where cpfCliente = {cpfCliente}")
             # Solicita ao usuario o novo email do cliente
             novo_email = input("email (Novo): ")
-            # Atualiza o email do cliente existente
-            oracle.write(f"update LABDATABASE.Cliente set email = '{novo_email}' where cpfCliente = {cpfCliente}")
             # Solicita ao usuario o novo telefone do cliente
             novo_telefone = input("telefone (Novo): ")
-            # Atualiza o telefone do cliente existente
-            oracle.write(f"update LABDATABASE.Cliente set telefone = '{novo_telefone}' where cpfCliente = {cpfCliente}")
             # Solicita ao usuario o novo endereco do cliente
             novo_endereco = input("endereco (Novo): ")
-            # Atualiza o endereco do cliente existente
-            oracle.write(f"update LABDATABASE.Cliente set endereco = '{novo_endereco}' where cpfCliente = {cpfCliente}")
+            # Atualiza as informações do cliente no banco de dados
+            self.mongo.db["Cliente"].update_one({"cpfcliente":f"{cpfCliente}"}, {"$set": {"nome": novo_nome, "email": novo_email,
+                                                                                          "telefone": novo_telefone, "endereco": novo_endereco}})
             # Recupera os dados do novo cliente criado transformando em um DataFrame
-            df_cliente = oracle.sqlToDataFrame(f"select cpfCliente, idCliente, nome, email, telefone, endereco from LABDATABASE.Cliente where cpfCliente = {cpfCliente}")
+            df_cliente = self.recupera_cliente(cpfCliente)
             # Cria um novo objeto cliente
             cliente_atualizado = Cliente(df_cliente.cpfcliente.values[0], df_cliente.idcliente.values[0], df_cliente.nome.values[0],
                             df_cliente.email.values[0], df_cliente.telefone.values[0], df_cliente.endereco.values[0])
             # Exibe os atributos do novo cliente
             print(cliente_atualizado.to_string())
+            self.mongo.close()
             # Retorna o objeto cliente_atualizado para utilização posterior, caso necessário
             return cliente_atualizado
         else:
@@ -80,25 +72,22 @@ class Controller_Cliente:
             return None
 
     def excluir_cliente(self):
-        # Cria uma nova conexão com o banco que permite alteração
-        oracle = OracleQueries(can_write=True)
-        oracle.connect()
-
         # Solicita ao usuário o CPF do Cliente a ser excluido
         cpfCliente = int(input("Informe o CPF do Cliente que irá excluir: "))        
-
+        self.mongo.connect()
         # Verifica se o cliente existe na base de dados
-        if not self.verifica_existencia_cliente(oracle, cpfCliente):            
+        if not self.verifica_existencia_cliente(cpfCliente):            
             # Recupera os dados do novo cliente criado transformando em um DataFrame
-            df_cliente = oracle.sqlToDataFrame(f"select cpfCliente, idCliente, nome, email, telefone, endereco from LABDATABASE.Cliente where cpfCliente = {cpfCliente}")
-            # Revome o cliente da tabela
-            oracle.write(f"delete from LABDATABASE.Cliente where cpfCliente = {cpfCliente}")            
+            df_cliente = self.recupera_cliente(cpfCliente)
+            # Remove o cliente da tabela
+            self.mongo.db["Cliente"].delete_one({"cpfcliente":f"{cpfCliente}"})            
             # Cria um novo objeto Cliente para informar que foi removido
             cliente_excluido = Cliente(df_cliente.cpfcliente.values[0], df_cliente.idcliente.values[0], df_cliente.nome.values[0],
                             df_cliente.email.values[0], df_cliente.telefone.values[0], df_cliente.endereco.values[0])
             # Exibe os atributos do cliente excluído
             print("Cliente Removido com Sucesso!")
             print(cliente_excluido.to_string())
+            self.mongo.close()
         else:
             print(f"O CPF {cpfCliente} não existe.")
 
@@ -107,8 +96,9 @@ class Controller_Cliente:
             #cria uma conexao com o banco que permite alteração
             self.mongo.connect()
 
-        #Recupera os dados do cliente e criaum novo DataFrame
-        df_cliente = pd.DataFrame(self.mongo.db["Cliente"].find({"cpfcliente":f"{cpfCliente}"}, {"cpfcliente":1, "idcliente":1, "_id":0}))
+        #Recupera os dados do cliente e cria um novo DataFrame
+        df_cliente = pd.DataFrame(self.mongo.db["Cliente"].find({"cpfcliente":f"{cpfCliente}"}, {"cpfcliente": 1, "idcliente": 1, "nome": 1,
+                       "email":1, "telefone": 1, "endereco": 1 ,"_id": 0}))
         
         if external:
             #Fecha a conexão com o Mongo
@@ -122,7 +112,8 @@ class Controller_Cliente:
             self.mongo.connect()
 
         # Recupera os dados do novo cliente criado transformando em um DataFrame
-        df_cliente = pd.DataFrame(list(self.mongo.db["Cliente"].find({"cpfcliente":f"{cpfCliente}"}, {"cpfcliente": 1,"idcliente":1 , "_id": 0})))
+        df_cliente = pd.DataFrame(list(self.mongo.db["Cliente"].find({"cpfcliente":f"{cpfCliente}"}, {"cpfcliente": 1, "idcliente": 1, "nome": 1,
+                       "email":1, "telefone": 1, "endereco": 1 ,"_id": 0})))
         
         if external:
             # Fecha a conexão com o Mongo

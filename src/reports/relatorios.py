@@ -13,8 +13,9 @@ class Relatorio:
         mongo.connect()
         # Recupera os dados transformando em um DataFrame
         query_result = (
-            mongo.db["LABDATABASE.Cliente"]
-            .find({}, {"cpfCliente": 1, "nome": 1, "_id": 0})
+            mongo.db["Cliente"]
+            .find({}, {"cpfcliente": 1, "idcliente": 1, "nome": 1,
+                       "email":1, "telefone": 1, "endereco": 1 ,"_id": 0})
             .sort("nome", ASCENDING)
         )
         df_cliente = pd.DataFrame(list(query_result))
@@ -30,15 +31,17 @@ class Relatorio:
         mongo.connect()
         # Recupera os dados transformando em um DataFrame
         query_result = (
-            mongo.db["LABDATABASE.Veiculo"]
-            .find({}, {"codigo_produto": 1, "descricao_produto": 1, "_id": 0})
-            .sort("descricao_produto", ASCENDING)
+            mongo.db["Veiculo"]
+            .find({}, {"idcarro": 1, "modelo": 1, "cor": 1, "anocarro":1 ,
+                       "chassicarro": 1, "tipocambio": 1, "fabricante":1 ,
+                       "_id": 0})
+            .sort("idcarro", ASCENDING)
         )
-        df_produto = pd.DataFrame(list(query_result))
+        df_veiculo = pd.DataFrame(list(query_result))
         # Fecha a conexão com o Mongo
         mongo.close()
         # Exibe o resultado
-        print(df_produto)
+        print(df_veiculo)
         input("Pressione Enter para Sair do Relatório de Veiculos")
 
     def get_relatorio_vendas(self):
@@ -47,13 +50,14 @@ class Relatorio:
         mongo.connect()
         # Recupera os dados transformando em um DataFrame
         query_result = (
-            mongo.db["LABDATABASE.VendaVeiculo"]
-            .find({}, {"cnpj": 1, "razao_social": 1, "nome_fantasia": 1, "_id": 0})
-            .sort("nome_fantasia", ASCENDING)
+            mongo.db["VendaVeiculo"]
+            .find({}, {"idvenda": 1, "valorvenda": 1, "datavenda": 1, "idvendedor":1 ,
+                       "cpfcliente": 1, "idcarro": 1 ,"_id": 0})
+            .sort("idvenda", ASCENDING)
         )
-        df_fornecedor = pd.DataFrame(list(query_result))
+        df_venda = pd.DataFrame(list(query_result))
         # Fecha a conexão com o mongo
         mongo.close()
         # Exibe o resultado
-        print(df_fornecedor)
-        input("Pressione Enter para Sair do Relatório de Fornecedores")
+        print(df_venda)
+        input("Pressione Enter para Sair do Relatório de Vendas")

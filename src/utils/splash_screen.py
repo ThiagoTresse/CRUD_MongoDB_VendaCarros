@@ -6,7 +6,7 @@ class SplashScreen:
         # Nome(s) do(s) criador(es)
         self.created_by = (
             "Luis Gulherme Oliveira",
-            "Macela da Silva",
+            "Marcela da Silva",
             "Thiago Campos Tresse",
         )
         self.professor = "Prof. M.Sc. Howard Roatti"
@@ -24,9 +24,9 @@ class SplashScreen:
         #                   SISTEMA DE VENDAS                     
         #                                                         
         #  TOTAL DE REGISTROS:                                    
-        #      1 - CLIENTES:         {str(self.get_documents_count(collection_name="clientes")).rjust(5)}
-        #      2 - VEICULOS:         {str(self.get_documents_count(collection_name="veiculos")).rjust(5)}
-        #      3 - VENDAS:           {str(self.get_documents_count(collection_name="vendas")).rjust(5)} #ou vendaVeiculos
+        #      1 - CLIENTES:         {str(self.get_documents_count(collection_name="Cliente")).rjust(5)}
+        #      2 - VEICULOS:         {str(self.get_documents_count(collection_name="Veiculo")).rjust(5)}
+        #      3 - VENDAS:           {str(self.get_documents_count(collection_name="VendaVeiculo")).rjust(5)}
         #
         #  CRIADO POR: {self.created_by}
         #
