@@ -36,29 +36,29 @@ class Controller_Venda:
         data_hoje = date.today()
         print("Data de hoje: ", data_hoje)
 
-        if self.verifica_prevenda(cpfCliente, idCarro):  # VERIFICAR PRÉ VENDA
+            #if self.verifica_prevenda(cpfCliente, idCarro):  # VERIFICAR PRÉ VENDA
             #Sistema gera a data da venda com a data de hoje
-            dataVenda = input("Informe a data da venda: ")
+        dataVenda = input("Informe a data da venda: ")
             #Solicita ao usuario o valor da venda
-            valorVenda = input("Informe o valor da venda: ")
+        valorVenda = input("Informe o valor da venda: ")
             #Solicita ao usuario o id do vendedor
-            idVendedor = input("Informe o id do vendedor: ")
+        idVendedor = input("Informe o id do vendedor: ")
             #Sistema gera um id de venda aleatorio
-            idVenda = random.randint(1000,9999)
-            print(f"O numero do ID da Venda é {idVenda}")
+        idVenda = random.randint(1000,9999)
+        print(f"O numero do ID da Venda é {idVenda}")
             # Grava os dados da nova Venda
-            self.mongo.db["VendaVeiculo"].insert_one({"cpfcliente": cpfCliente, "idcarro": idCarro, "datavenda": dataVenda,
+        self.mongo.db["VendaVeiculo"].insert_one({"cpfcliente": cpfCliente, "idcarro": idCarro, "datavenda": dataVenda,
                                                       "valorvenda": valorVenda, "idvendedor": idVendedor, "idvenda": idVenda})
             # Recupera os dados do novo cliente criado transformando em um DataFrame
-            df_venda = self.recupera_venda(idVenda)
+        df_venda = self.recupera_venda(idVenda)
             # Cria um novo objeto venda
-            nova_venda = VendaVeiculo(df_venda.idvenda.values[0], df_venda.valorvenda.values[0], df_venda.datavenda.values[0],
+        nova_venda = VendaVeiculo(df_venda.idvenda.values[0], df_venda.valorvenda.values[0], df_venda.datavenda.values[0],
                                     df_venda.idvendedor.values[0], df_venda.cpfcliente[0], df_venda.idcarro[0])
             # Exibe os atributos da nova venda
-            print(nova_venda.to_string())
-            self.mongo.close()
+        print(nova_venda.to_string())
+        self.mongo.close()
             # Retorna o objeto novo_pedido para utilização posterior, caso necessário
-            return nova_venda
+        return nova_venda
 
     def atualizar_venda(self) -> VendaVeiculo:
         #Lista as vendas para serem alteradas
@@ -153,8 +153,7 @@ class Controller_Venda:
             self.mongo.connect()
 
         # Recupera os dados do novo cliente criado transformando em um DataFrame
-        df_veiculo = pd.DataFrame(list(self.mongo.db["VendaVeiculo"].find({"cpfcliente":f"{cpfCliente}","idcarro":f"{idCarro}"}, {"idcarro": 1, "modelo": 1, "cor": 1,
-                       "anocarro":1, "chassicarro": 1, "tipocambio": 1 , "fabricante": 1, "_id": 0})))
+        df_veiculo = pd.DataFrame(list(self.mongo.db["VendaVeiculo"].find({"$and":[{"cpfcliente":f"{cpfCliente}"},{"idcarro":f"{idCarro}"}]}, {"idvenda": 1, "_id": 0})))
         
         if external:
             # Fecha a conexão com o Mongo
@@ -176,10 +175,7 @@ class Controller_Venda:
             self.mongo.close()
       
         return df_cliente.empty
-    
-    
-
-
+        
     def valida_cliente(self, cpfCliente:str=None) -> Cliente:
         if self.ctrl_cliente.verifica_existencia_cliente(cpfCliente=cpfCliente, external=True):
             print(f"O CPF {cpfCliente} informado não existe na base.")
@@ -210,7 +206,7 @@ class Controller_Venda:
             self.mongo.connect()
 
         # Recupera os dados do novo cliente criado transformando em um DataFrame
-        df_venda = pd.DataFrame(list(self.mongo.db["VendaVeiculo"].find({"idvenda":f"{idVenda}"}, {"cpfcliente": 1, "idcarro": 1, "datavenda": 1,
+        df_venda = pd.DataFrame(list(self.mongo.db["VendaVeiculo"].find({"idvenda":f"{idVenda}"}, {"cpfcliente": 1, "idvenda": 1,"idcarro": 1, "datavenda": 1,
                        "valorvenda":1, "idvendedor": 1, "_id": 0})))
         
         if external:
