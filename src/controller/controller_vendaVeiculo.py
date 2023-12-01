@@ -1,4 +1,3 @@
-from pydoc import cli
 from reports.relatorios import Relatorio
 from model.clientes import Cliente
 from controller.controller_cliente import Controller_Cliente
@@ -9,6 +8,7 @@ from conexion.mongo_queries import MongoQueries
 from datetime import date
 import pandas as pd
 import random
+from bson import ObjectId
 
 class Controller_Venda:
     def __init__(self):
@@ -54,6 +54,7 @@ class Controller_Venda:
             # Cria um novo objeto venda
             nova_venda = VendaVeiculo(df_venda.cpfcliente.values[0], df_venda.idcarro.values[0], df_venda.datavenda.values[0],
                                     df_venda.valorvenda.values[0], df_venda.idvendedor[0], df_venda.idvenda[0])
+            
             # Exibe os atributos da nova venda
             print(nova_venda.to_string())
             self.mongo.close()
@@ -62,16 +63,16 @@ class Controller_Venda:
 
     def atualizar_venda(self) -> VendaVeiculo:
         #Lista as vendas para serem alteradas
-        self.relatorio.get_relatorio_vendas
+        self.relatorio.get_relatorio_vendas()
         # Solicita ao usuário o código da venda a ser alterado
         idVenda = int(input("Insira o código da Venda que irá alterar: "))        
-        self.mongo.connect
+        self.mongo.connect()
 
         # Verifica se a venda existe na base de dados
-        if not self.verifica_existencia_venda(idVenda):
+        if self.verifica_existencia_venda(idVenda):
 
             # Lista os clientes existentes para inserir na venda
-            self.relatorio.get_relatorio_clientes
+            self.relatorio.get_relatorio_clientes()
             novo_cpfCliente = str(input("Digite o novo número do CPF do Cliente: "))
 
             Cliente = self.valida_cliente(novo_cpfCliente)
@@ -79,13 +80,14 @@ class Controller_Venda:
                 return None
           
             # Lista os veiculos existentes para inserir na venda
-            self.relatorio.get_relatorio_veiculos
+            self.relatorio.get_relatorio_veiculos()
             novo_idCarro = str(input("Digite o novo codigo do Veiculo: "))
             Veiculo = self.valida_veiculo(novo_idCarro)
             if Veiculo == None:
                 return None
             else:
-                oracle.write(f"update VendaVeiculo set idCarro = {novo_idCarro} where cpfCliente = {idVenda}")
+                self.mongo.db["VendaVeiculo"].update_one({"idvenda":f"{idVenda}"}, {"$set": {"idcarro": novo_idCarro}})
+
 
             #Solicita ao usuario o novo valor da venda
             novo_valorVenda = input("Informe o valor da venda: ")
@@ -100,22 +102,22 @@ class Controller_Venda:
             # Recupera os dados da nova venda criada transformando em um DataFrame
             df_venda = self.recupera_venda(idVenda)
             # Cria um novo objeto venda
-            venda_atualizada = VendaVeiculo(df_venda.idVenda.values[0], df_venda.valorVenda.values[0], df_venda.dataVenda.values[0], df_venda.idVendedor.values[0],
-                                             df_venda.cpfCliente[0], df_venda.idCarro[0])
+            venda_atualizada = VendaVeiculo(df_venda.idvenda.values[0], df_venda.valorvenda.values[0], df_venda.datavenda.values[0], df_venda.idvendedor.values[0],
+                                             df_venda.cpfcliente[0], df_venda.idcarro[0])
             # Exibe os atributos da nova venda
             print(venda_atualizada.to_string())
             # Retorna o objeto venda_atualizado para utilização posterior, caso necessário
+            self.mongo.close()
             return venda_atualizada
-            self.mongo.close
         else:
             print(f"O id {idVenda} não existe.")
+            self.mongo.close()
             return None
-            self.mongo.close
 
     def excluir_venda(self):
         # Solicita ao usuário o código do produto a ser alterado
         idVenda = int(input("ID da venda que deseja excluir: "))        
-        self.mongo.connect
+        self.mongo.connect()
         # Verifica se o produto existe na base de dados
         if not self.verifica_existencia_venda(idVenda):            
             # Recupera os dados do novo produto criado transformando em um DataFrame
@@ -128,13 +130,19 @@ class Controller_Venda:
                     # Revome o produto da tabela
                     self.mongo.db["VendaVeiculo"].delete_one({"idvenda":f"{idVenda}"})
                     print("Venda removida com sucesso!")
+                    self.mongo.db["VendaVeiculo"].delete_one({"idvenda":f"{idVenda}"})
+                    cliente = self.ctrl_cliente.recupera_cliente(cpfCliente=df_venda.cpfcliente[0], external=True)
+                    veiculo = self.ctrl_veiculo.recupera_veiculo(idCarro=df_venda.idcarro[0], external=True)
+
                     # Cria um novo objeto Venda para informar que foi removido
                     venda_excluida = VendaVeiculo(df_venda.idvenda.values[0], df_venda.valorvenda.values[0], df_venda.datavenda.values[0], 
-                                                  df_venda.idvendedor.values[0], df_venda.cpfcliente[0], df_venda.idcarro[0])
+                                                  df_venda.idvendedor.values[0], cliente, veiculo)
                     # Exibe os atributos do produto excluído
                     print("Venda Removida com Sucesso!")
+                    self.mongo.close()
                     print(venda_excluida.to_string())
         else:
+            self.mongo.close()
             print(f"O id {idVenda} não existe.")
 
     def verifica_prevenda(self, cpfCliente:str=None, idCarro:str=None, external:bool=False) -> pd.DataFrame:
@@ -144,18 +152,22 @@ class Controller_Venda:
 
         # Recupera os dados do novo cliente criado transformando em um DataFrame
         df_veiculo = (self.mongo.db["VendaVeiculo"].find({"$and":[
-                                                                        {"cpfcliente":f"{cpfCliente}"},
-                                                                        {"idcarro":f"{idCarro}"}
+                                                                        {"cpfcliente":cpfCliente},
+                                                                        {"idcarro":idCarro}
                                                                         ]
                                                                             }, {"idvenda": 1, "_id": 0}))
-        
         if external:
             # Fecha a conexão com o Mongo
             self.mongo.close()
 
         return df_veiculo
     
-    def verifica_existencia_venda(self, cpfCliente:str=None, external:bool=False) -> bool:
+    def verifica_existencia_venda(self, idVenda:int=None, external: bool = False) -> bool:
+        # Recupera os dados do novo pedido criado transformando em um DataFrame
+        df_venda = self.recupera_venda(idVenda=idVenda, external=external)
+        return df_venda.empty
+        
+    '''def verifica_existencia_venda(self, cpfCliente:str=None, external:bool=False) -> bool:
         if external:
             #cria uma conexao com o banco que permite alteração
             self.mongo.connect()
@@ -168,8 +180,9 @@ class Controller_Venda:
             #Fecha a conexão com o Mongo
             self.mongo.close()
       
-        return df_cliente.empty
-        
+        return df_cliente.empty'''
+
+
     def valida_cliente(self, cpfCliente:str=None) -> Cliente:
         if self.ctrl_cliente.verifica_existencia_cliente(cpfCliente=cpfCliente, external=True):
             print(f"O CPF {cpfCliente} informado não existe na base.")
@@ -198,11 +211,12 @@ class Controller_Venda:
         if external:
             # Cria uma nova conexão com o banco que permite alteração
             self.mongo.connect()
-
+            self.ctrl_cliente.recupera_cliente()
+            self.ctrl_veiculo.recupera_veiculo()
         # Recupera os dados do novo cliente criado transformando em um DataFrame
-        df_venda = pd.DataFrame(list(self.mongo.db["VendaVeiculo"].find({"idvenda":f"{idVenda}"}, {"cpfcliente": 1, "idvenda": 1,"idcarro": 1, "datavenda": 1,
+        df_venda = pd.DataFrame(list(self.mongo.db["VendaVeiculo"].find({"idvenda":idVenda}, {"cpfcliente": 1, "idvenda": 1,"idcarro": 1, "datavenda": 1,
                        "valorvenda":1, "idvendedor": 1, "_id": 0})))
-        
+        print(df_venda)
         if external:
             # Fecha a conexão com o Mongo
             self.mongo.close()
