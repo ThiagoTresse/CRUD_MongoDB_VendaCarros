@@ -117,7 +117,7 @@ class Controller_Veiculo:
       
         return df_veiculo.empty
 
-    def recupera_veiculo(self, idCarro:str=None, external:bool=False) -> pd.DataFrame:
+    def recupera_veiculo(self, idCarro:int=None, external:bool=False) -> pd.DataFrame:
         if external:
             # Cria uma nova conexão com o banco que permite alteração
             self.mongo.connect()
